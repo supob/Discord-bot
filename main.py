@@ -18,6 +18,7 @@ ROLE_NAME = "| Vip"  # Change with the exact role name
 REDEEM_CHANNEL_NAME = "🔑redeem"  # Channel name
 CATEGORY_NAME = "redeem"  # Category name
 last_used = {}  # Stores last time a user used the command
+cooldown_time = 25  # Time in seconds before user can use !redeem again
 
 # Set up Flask to keep the bot alive
 app = Flask("")
@@ -46,9 +47,11 @@ async def redeem(ctx):
         await ctx.send(f"\U0001F6AB {ctx.author.mention}, please use the command in the {REDEEM_CHANNEL_NAME} channel.")
         return
 
-    # Limit command usage to avoid spam
+    # Limit command usage to avoid spam (25-second cooldown)
     current_time = time.time()
-    if ctx.author.id in last_used and current_time - last_used[ctx.author.id] < 120:
+    if ctx.author.id in last_used and current_time - last_used[ctx.author.id] < cooldown_time:
+        time_left = cooldown_time - (current_time - last_used[ctx.author.id])
+        await ctx.send(f"\U000023F3 {ctx.author.mention}, you must wait {int(time_left)} more seconds before using !redeem again.")
         return
 
     last_used[ctx.author.id] = current_time
@@ -60,7 +63,7 @@ async def redeem(ctx):
 
     # Send a DM to the user asking for the category
     try:
-        await ctx.author.send("\U0001F381 **Redeem Request:** Please select a category from the following options: \n1. **Cheat** \n2. **Streaming** \n3. **Role** \n4. **Accounts**")
+        await ctx.author.send("\U0001F381 **Redeem Request:** Please select a category from the following options: \n1. **Cheat** \n2. **Streaming** \n3. **Role** \n4. **Accounts")
     except discord.Forbidden:
         await ctx.send(f"\U0001F6AB {ctx.author.mention}, I couldn't send you a DM. Please make sure you have direct messages enabled.")
         return
