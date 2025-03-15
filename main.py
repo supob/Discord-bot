@@ -36,14 +36,14 @@ def keep_alive():
 # Evento quando il bot è pronto
 @bot.event
 async def on_ready():
-    print(f"🌐 Bot is online as {bot.user}")
+    print(f"\U0001F310 Bot is online as {bot.user}")
 
 @bot.command()
 async def redeem(ctx):
     # Controlla che il comando sia stato eseguito nel canale giusto
     channel = ctx.channel
     if channel.name != REDEEM_CHANNEL_NAME or channel.category.name != CATEGORY_NAME:
-        await ctx.send(f"🚫 {ctx.author.mention}, please use the command in the {REDEEM_CHANNEL_NAME} channel.")
+        await ctx.send(f"\U0001F6AB {ctx.author.mention}, please use the command in the {REDEEM_CHANNEL_NAME} channel.")
         return
 
     # Limita la ripetizione del comando per evitare lo spam
@@ -53,11 +53,16 @@ async def redeem(ctx):
 
     last_used[ctx.author.id] = current_time
 
+    # Invia un messaggio visibile solo all'utente
+    message = await ctx.send(f"\U0001F4E9 {ctx.author.mention}, controlla i tuoi DM per il codice di redeem.")
+    await asyncio.sleep(5)  # Aspetta 5 secondi
+    await message.delete()  # Cancella il messaggio
+
     # Invia un DM all'utente per richiedere il codice
     try:
-        await ctx.author.send("🎁 **Redeem Request:** Enter your redeem code here. You have 3 attempts and 5 minutes to complete this process.")
+        await ctx.author.send("\U0001F381 **Redeem Request:** Enter your redeem code here. You have 3 attempts and 5 minutes to complete this process.")
     except discord.Forbidden:
-        await ctx.send(f"🚫 {ctx.author.mention}, I couldn't send you a DM. Please enable direct messages.")
+        await ctx.send(f"\U0001F6AB {ctx.author.mention}, I couldn't send you a DM. Please enable direct messages.")
         return
 
     def check(m):
@@ -90,57 +95,28 @@ async def redeem(ctx):
                 if role:
                     await ctx.author.add_roles(role)
                     success_message = (
-                        f"🎉 **Redeem Successful!**\n"
+                        f"\U0001F389 **Redeem Successful!**\n"
                         f"You've successfully redeemed your code and received the **{ROLE_NAME}** role. Enjoy your new privileges!"
                     )
                     await ctx.author.send(success_message)
                 else:
-                    await ctx.author.send("🚫 Error: Role not found!")
+                    await ctx.author.send("\U0001F6AB Error: Role not found!")
                 return
             else:
                 attempts -= 1
                 if attempts > 0:
-                    await ctx.author.send(f"❌ Invalid code. You have {attempts} attempts left.")
+                    await ctx.author.send(f"\U0000274C Invalid code. You have {attempts} attempts left.")
                 else:
-                    await ctx.author.send("❌ You've used all your attempts. The redeem request has been canceled.")
+                    await ctx.author.send("\U0000274C You've used all your attempts. The redeem request has been canceled.")
                     return
 
         except asyncio.TimeoutError:
-            await ctx.author.send("⏳ Your redeem request has been canceled due to inactivity.")
+            await ctx.author.send("\U000023F3 Your redeem request has been canceled due to inactivity.")
             return
         except Exception as e:
-            await ctx.author.send("🚫 An unexpected error occurred. Please try again later.")
+            await ctx.author.send("\U0001F6AB An unexpected error occurred. Please try again later.")
             return
 
-@bot.command()
-async def checkcode(ctx, code: str):
-    """Comando per verificare se un codice è ancora valido"""
-    try:
-        with open("codes.txt", "r") as f:
-            codes = f.read().splitlines()
-
-        if code in codes:
-            await ctx.send(f"✅ The code **{code}** is still valid.")
-        else:
-            await ctx.send(f"❌ The code **{code}** has already been redeemed or is invalid.")
-    except Exception:
-        await ctx.send("🚫 An error occurred while checking the code.")
-
-@bot.command()
-async def redeemlog(ctx):
-    """Mostra il log dei redemption"""
-    try:
-        with open("redeemed_log.txt", "r") as log:
-            redeemed_data = log.read()
-
-        if redeemed_data:
-            await ctx.send(f"📜 **Redemption Log:**\n{redeemed_data}")
-        else:
-            await ctx.send("🚫 No redemption logs found.")
-    except Exception:
-        await ctx.send("🚫 An error occurred while retrieving the redemption log.")
-
-# Avvia il server web Flask per tenere il bot attivo
 keep_alive()
 
 # Esegui il bot Discord
