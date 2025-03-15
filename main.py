@@ -63,7 +63,7 @@ async def redeem(ctx):
 
     # Send a DM to the user asking for the category
     try:
-        await ctx.author.send("\U0001F381 **Redeem Request:** Please select a category from the following options: \n1. **Cheat** \n2. **Streaming** \n3. **Role** \n4. **Accounts**")
+        await ctx.author.send("\U0001F381 **Redeem Request:** Please select a category from the following options: \n1. **Cheat** \n2. **Streaming** \n3. **Role** \n4. **Accounts")
     except discord.Forbidden:
         await ctx.send(f"\U0001F6AB {ctx.author.mention}, I couldn't send you a DM. Please make sure you have direct messages enabled.")
         return
@@ -97,48 +97,47 @@ async def redeem(ctx):
                 return  # End the function, close ticket
 
             elif category == 'streaming':
-                await ctx.author.send("**Streaming Products:**\n- Crunchyroll")
+                await ctx.author.send("**Streaming Products:**\n- Crunchyroll\nPlease enter your key for this category, starting with `crly-`.")
+
             elif category == 'role':
                 await ctx.author.send("**Role Products:**\n- VIP")
             elif category == 'accounts':
                 await ctx.author.send("**Accounts Products:**\n- Rockstar Key")
 
-            # Ask for the key after displaying the products
-            await ctx.author.send("Please enter the key for this category.")
-
             # Wait for the key from the user
             key_message = await bot.wait_for('message', check=check, timeout=300)
             key = key_message.content
 
-            # Check the category-specific text files for the key
-            file_name = f"{category}.txt"
-            try:
-                with open(file_name, "r") as f:
-                    keys = f.read().splitlines()
+            # Handle Crunchyroll keys (crly-)
+            if category == 'streaming' and key.startswith('crly-'):
+                # Check the key
+                with open('streaming.txt', 'r') as f:
+                    valid_keys = f.read().splitlines()
 
-                if key in keys:
-                    # Key is valid, remove it from the file and log
-                    keys.remove(key)
-                    with open(file_name, "w") as f:
-                        f.write("\n".join(keys))
+                if key in valid_keys:
+                    valid_keys.remove(key)
+                    with open('streaming.txt', 'w') as f:
+                        f.write("\n".join(valid_keys))
 
                     # Log the redemption
                     with open("redeemed_log.txt", "a") as log:
                         log.write(f"{ctx.author.name} redeemed {key} from {category} at {time.ctime()}\n")
 
-                    # Assign the role to the user (if applicable)
-                    role = discord.utils.get(ctx.guild.roles, name=ROLE_NAME)
-                    if role:
-                        await ctx.author.add_roles(role)
-                        await ctx.author.send(f"\U0001F389 **Success!** Your code has been successfully redeemed!")
-                    else:
-                        await ctx.author.send("\U0001F6AB Error: Couldn't find the role.")
-                else:
-                    await ctx.author.send(f"\U0000274C Invalid key for {category} category. Please try again.")
-                    return
+                    # Send confirmation and further instructions
+                    await ctx.author.send(f"\U0001F389 **Success!** You've redeemed your Crunchyroll key `{key}`. Please do the following:\n\n"
+                                           f"1. Contact @orpoby or open a ticket.\n"
+                                           f"2. Send a screenshot of the redemption, including the code `{key}` and your Discord username.")
 
-            except FileNotFoundError:
-                await ctx.author.send(f"\U0001F6AB Error: No valid file for {category}.")
+                else:
+                    await ctx.author.send(f"\U0000274C Invalid key for Crunchyroll. Please try again with a valid key.")
+
+            # Handle other categories
+            elif category == 'role' and key in ['vip']:
+                await ctx.author.send(f"\U0001F389 **Success!** You've redeemed the `{key}` role.")
+            elif category == 'accounts' and key in ['rockstarkey']:
+                await ctx.author.send(f"\U0001F389 **Success!** You've redeemed your Rockstar key `{key}`.")
+            else:
+                await ctx.author.send(f"\U0000274C Invalid key for {category} category. Please try again.")
                 return
 
         except asyncio.TimeoutError:
