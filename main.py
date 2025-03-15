@@ -63,7 +63,7 @@ async def redeem(ctx):
 
     # Send a DM to the user asking for the category
     try:
-        await ctx.author.send("\U0001F381 **Redeem Request:** Please select a category from the following options: \n1. **Cheat** \n2. **Streaming** \n3. **Role** \n4. **Accounts")
+        await ctx.author.send("\U0001F381 **Redeem Request:** Please select a category from the following options: \n1. **Cheat** \n2. **Streaming** \n3. **Role** \n4. **Accounts**")
     except discord.Forbidden:
         await ctx.send(f"\U0001F6AB {ctx.author.mention}, I couldn't send you a DM. Please make sure you have direct messages enabled.")
         return
