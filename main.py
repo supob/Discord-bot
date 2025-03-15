@@ -58,56 +58,87 @@ async def redeem(ctx):
     await asyncio.sleep(5)  # Wait 5 seconds
     await message.delete()  # Delete the message
 
-    # Send a DM to the user asking for the code
+    # Send a DM to the user asking for the category selection
     try:
-        await ctx.author.send("\U0001F381 **Redeem Request:** Please enter your redeem code. You have 3 attempts and 5 minutes to complete this process.")
+        await ctx.author.send("🎯 **Category Selection:** Please choose a category.\n\n1. Cheat\n2. Streaming\n3. Role\n4. Accounts")
     except discord.Forbidden:
         await ctx.send(f"\U0001F6AB {ctx.author.mention}, I couldn't send you a DM. Please make sure you have direct messages enabled.")
         return
 
-    def check(m):
+    def check_category(m):
         return m.author == ctx.author and isinstance(m.channel, discord.DMChannel)
+
+    category_choice = None
+    while not category_choice:
+        try:
+            category_message = await bot.wait_for('message', check=check_category, timeout=300)
+            category_choice = category_message.content.lower()
+
+            if category_choice not in ['cheat', 'streaming', 'role', 'accounts']:
+                await ctx.author.send("❌ Invalid category. Please select from the following: Cheat, Streaming, Role, Accounts.")
+                category_choice = None
+        except asyncio.TimeoutError:
+            await ctx.author.send("\U000023F3 Timeout: The category selection was canceled due to inactivity.")
+            return
+
+    # Ask for the key after category selection
+    await ctx.author.send(f"🔑 **You chose the {category_choice} category.** Please enter the key associated with this category.")
 
     attempts = 3
     while attempts > 0:
         try:
-            # Wait for the code from the user
-            code_message = await bot.wait_for('message', check=check, timeout=300)
-            code = code_message.content
+            key_message = await bot.wait_for('message', check=check_category, timeout=300)
+            key = key_message.content.strip()
 
-            # Read codes from the file
-            with open("codes.txt", "r") as f:
-                codes = f.read().splitlines()
+            # Check the selected category file for the key
+            category_file = f"{category_choice}.txt"
+            category_found = False
 
-            # Check if the code is valid
-            if code in codes:
-                # Remove the code from the list
-                codes.remove(code)
-                with open("codes.txt", "w") as f:
-                    f.write("\n".join(codes))
+            # Check if the file exists
+            if os.path.exists(category_file):
+                with open(category_file, "r") as f:
+                    keys = f.read().splitlines()
 
-                # Log who redeemed the code
-                with open("redeemed_log.txt", "a") as log:
-                    log.write(f"{ctx.author.name} redeemed {code} at {time.ctime()}\n")
+                # Check if the key is valid
+                if key in keys:
+                    category_found = True
+                    keys.remove(key)
+                    with open(category_file, "w") as f:
+                        f.write("\n".join(keys))
 
-                # Assign the role to the user
-                role = discord.utils.get(ctx.guild.roles, name=ROLE_NAME)
-                if role:
-                    await ctx.author.add_roles(role)
-                    success_message = (
-                        f"\U0001F389 **Success!**\n"
-                        f"Your code has been successfully redeemed and you've been granted the **{ROLE_NAME}** role. Enjoy!"
-                    )
-                    await ctx.author.send(success_message)
-                else:
-                    await ctx.author.send("\U0001F6AB Error: Couldn't find the role.")
-                return
-            else:
+                    # Log who redeemed the key
+                    with open("redeemed_log.txt", "a") as log:
+                        log.write(f"{ctx.author.name} redeemed key {key} from {category_choice} at {time.ctime()}\n")
+
+                    # Assign the role to the user
+                    role = discord.utils.get(ctx.guild.roles, name=ROLE_NAME)
+                    if role:
+                        await ctx.author.add_roles(role)
+                        success_message = (
+                            f"\U0001F389 **Success!**\n"
+                            f"Your key has been successfully redeemed and you've been granted the **{ROLE_NAME}** role. Enjoy!"
+                        )
+                        await ctx.author.send(success_message)
+                    else:
+                        await ctx.author.send("\U0001F6AB Error: Couldn't find the role.")
+                    return
+
+            if not category_found:
+                # Try to find the key in other categories
+                for other_category in ['cheat', 'streaming', 'role', 'accounts']:
+                    if other_category != category_choice and os.path.exists(f"{other_category}.txt"):
+                        with open(f"{other_category}.txt", "r") as f:
+                            other_keys = f.read().splitlines()
+
+                        if key in other_keys:
+                            await ctx.author.send(f"❌ Incorrect category. The key you entered belongs to the {other_category} category.")
+                            return
+
                 attempts -= 1
                 if attempts > 0:
-                    await ctx.author.send(f"\U0000274C Invalid code. You have {attempts} attempts remaining.")
+                    await ctx.author.send(f"❌ Invalid key. You have {attempts} attempts remaining.")
                 else:
-                    await ctx.author.send("\U0000274C You've used all your attempts. The redemption process has been canceled.")
+                    await ctx.author.send("❌ You've used all your attempts. The redemption process has been canceled.")
                     return
 
         except asyncio.TimeoutError:
