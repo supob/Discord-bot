@@ -58,94 +58,91 @@ async def redeem(ctx):
     await asyncio.sleep(5)  # Wait 5 seconds
     await message.delete()  # Delete the message
 
-    # Send a DM to the user asking for the category selection
+    # Send a DM to the user asking for the category
     try:
-        await ctx.author.send("🎯 **Category Selection:** Please choose a category.\n\n1. Cheat\n2. Streaming\n3. Role\n4. Accounts")
+        await ctx.author.send("\U0001F381 **Redeem Request:** Please select a category from the following options: \n1. **Cheat** \n2. **Streaming** \n3. **Role** \n4. **Accounts**")
     except discord.Forbidden:
         await ctx.send(f"\U0001F6AB {ctx.author.mention}, I couldn't send you a DM. Please make sure you have direct messages enabled.")
         return
 
-    def check_category(m):
+    def check(m):
         return m.author == ctx.author and isinstance(m.channel, discord.DMChannel)
 
-    category_choice = None
-    while not category_choice:
-        try:
-            category_message = await bot.wait_for('message', check=check_category, timeout=300)
-            category_choice = category_message.content.lower()
-
-            if category_choice not in ['cheat', 'streaming', 'role', 'accounts']:
-                await ctx.author.send("❌ Invalid category. Please select from the following: Cheat, Streaming, Role, Accounts.")
-                category_choice = None
-        except asyncio.TimeoutError:
-            await ctx.author.send("\U000023F3 Timeout: The category selection was canceled due to inactivity.")
-            return
-
-    # Ask for the key after category selection
-    await ctx.author.send(f"🔑 **You chose the {category_choice} category.** Please enter the key associated with this category.")
-
-    attempts = 3
+    attempts = 2
     while attempts > 0:
         try:
-            key_message = await bot.wait_for('message', check=check_category, timeout=300)
-            key = key_message.content.strip()
+            # Wait for the category selection from the user
+            category_message = await bot.wait_for('message', check=check, timeout=300)
+            category = category_message.content.lower()
 
-            # Check the selected category file for the key
-            category_file = f"{category_choice}.txt"
-            category_found = False
+            if category not in ['cheat', 'streaming', 'role', 'accounts']:
+                attempts -= 1
+                if attempts > 0:
+                    await ctx.author.send(f"\U0000274C Invalid category. You have {attempts} attempts remaining.")
+                else:
+                    await ctx.author.send("\U0000274C You've used all your attempts. The redemption process has been canceled.")
+                    return
 
-            # Check if the file exists
-            if os.path.exists(category_file):
-                with open(category_file, "r") as f:
+                continue  # Ask again
+
+            # Category selection valid, proceed with the product list
+            if category == 'cheat':
+                await ctx.author.send("**Cheat Products:**\n- Empty")
+                await asyncio.sleep(5)  # Wait 5 seconds before closing the ticket
+                await ctx.author.send("Closing the ticket now.")
+                # Logic for closing the ticket here
+                return  # End the function, close ticket
+
+            elif category == 'streaming':
+                await ctx.author.send("**Streaming Products:**\n- Crunchyroll")
+            elif category == 'role':
+                await ctx.author.send("**Role Products:**\n- VIP")
+            elif category == 'accounts':
+                await ctx.author.send("**Accounts Products:**\n- Rockstar Key")
+
+            # Ask for the key after displaying the products
+            await ctx.author.send("Please enter the key for this category.")
+
+            # Wait for the key from the user
+            key_message = await bot.wait_for('message', check=check, timeout=300)
+            key = key_message.content
+
+            # Check the category-specific text files for the key
+            file_name = f"{category}.txt"
+            try:
+                with open(file_name, "r") as f:
                     keys = f.read().splitlines()
 
-                # Check if the key is valid
                 if key in keys:
-                    category_found = True
+                    # Key is valid, remove it from the file and log
                     keys.remove(key)
-                    with open(category_file, "w") as f:
+                    with open(file_name, "w") as f:
                         f.write("\n".join(keys))
 
-                    # Log who redeemed the key
+                    # Log the redemption
                     with open("redeemed_log.txt", "a") as log:
-                        log.write(f"{ctx.author.name} redeemed key {key} from {category_choice} at {time.ctime()}\n")
+                        log.write(f"{ctx.author.name} redeemed {key} from {category} at {time.ctime()}\n")
 
-                    # Assign the role to the user
+                    # Assign the role to the user (if applicable)
                     role = discord.utils.get(ctx.guild.roles, name=ROLE_NAME)
                     if role:
                         await ctx.author.add_roles(role)
-                        success_message = (
-                            f"\U0001F389 **Success!**\n"
-                            f"Your key has been successfully redeemed and you've been granted the **{ROLE_NAME}** role. Enjoy!"
-                        )
-                        await ctx.author.send(success_message)
+                        await ctx.author.send(f"\U0001F389 **Success!** Your code has been successfully redeemed!")
                     else:
                         await ctx.author.send("\U0001F6AB Error: Couldn't find the role.")
-                    return
-
-            if not category_found:
-                # Try to find the key in other categories
-                for other_category in ['cheat', 'streaming', 'role', 'accounts']:
-                    if other_category != category_choice and os.path.exists(f"{other_category}.txt"):
-                        with open(f"{other_category}.txt", "r") as f:
-                            other_keys = f.read().splitlines()
-
-                        if key in other_keys:
-                            await ctx.author.send(f"❌ Incorrect category. The key you entered belongs to the {other_category} category.")
-                            return
-
-                attempts -= 1
-                if attempts > 0:
-                    await ctx.author.send(f"❌ Invalid key. You have {attempts} attempts remaining.")
                 else:
-                    await ctx.author.send("❌ You've used all your attempts. The redemption process has been canceled.")
+                    await ctx.author.send(f"\U0000274C Invalid key for {category} category. Please try again.")
                     return
+
+            except FileNotFoundError:
+                await ctx.author.send(f"\U0001F6AB Error: No valid file for {category}.")
+                return
 
         except asyncio.TimeoutError:
             await ctx.author.send("\U000023F3 Timeout: The redemption process was canceled due to inactivity.")
             return
         except Exception as e:
-            await ctx.author.send("\U0001F6AB Something went wrong. Please try again later.")
+            await ctx.author.send(f"\U0001F6AB Something went wrong: {e}")
             return
 
 keep_alive()
