@@ -63,7 +63,7 @@ async def redeem(ctx):
 
     # Send a DM to the user asking for the category
     try:
-        await ctx.author.send("\U0001F381 **Redeem Request:** Please select a category from the following options: \n1. **Cheat** \n2. **Streaming** \n3. **Role** \n4. **Accounts")
+        await ctx.author.send("\U0001F381 **Redeem Request:** Please select a category from the following options: \n1. **Cheat** \n2. **Streaming** \n3. **Role** \n4. **Accounts**")
     except discord.Forbidden:
         await ctx.send(f"\U0001F6AB {ctx.author.mention}, I couldn't send you a DM. Please make sure you have direct messages enabled.")
         return
@@ -90,21 +90,16 @@ async def redeem(ctx):
 
             # Category selection valid, proceed with the product list
             if category == 'cheat':
-                await ctx.author.send("**Cheat Products:**\n- Empty")
-                await ctx.author.send("Please enter your key for this category.\n\n**Price List:**\n- Empty Key: Free")
-                await asyncio.sleep(5)  # Wait 5 seconds before closing the ticket
-                await ctx.author.send("Closing the ticket now.")
-                # Logic for closing the ticket here
-                return  # End the function, close ticket
+                await ctx.author.send("**Cheat Products:**\n- Empty\n\nPlease enter your key for this category.")
 
             elif category == 'streaming':
-                await ctx.author.send("**Streaming Products:**\n- Crunchyroll\nPlease enter your key for this category (start with `crly-`).\n\n**Price List:**\n- Crunchyroll Key: $12/month")
-            
+                await ctx.author.send("**Streaming Products:**\n- Crunchyroll\n\nPlease enter your key for this category (start with `crly-`).")
+
             elif category == 'role':
-                await ctx.author.send("**Role Products:**\n- VIP\nPlease enter your key for this category.\n\n**Price List:**\n- VIP Role: $20")
+                await ctx.author.send("**Role Products:**\n- VIP\n\nPlease enter your key for this category.")
 
             elif category == 'accounts':
-                await ctx.author.send("**Accounts Products:**\n- Rockstar Key\nPlease enter your key for this category.\n\n**Price List:**\n- Rockstar Key: $40")
+                await ctx.author.send("**Accounts Products:**\n- Rockstar Key\n\nPlease enter your key for this category.")
 
             # Wait for the key from the user
             key_message = await bot.wait_for('message', check=check, timeout=300)
