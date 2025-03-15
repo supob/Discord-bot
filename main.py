@@ -60,9 +60,9 @@ async def redeem(ctx):
 
     # Send a DM to the user asking for the code
     try:
-        await ctx.author.send("\U0001F381 **Redeem Request:** Enter your redeem code here. You have 3 attempts and 5 minutes to complete this process.")
+        await ctx.author.send("\U0001F381 **Redeem Request:** Please enter your redeem code. You have 3 attempts and 5 minutes to complete this process.")
     except discord.Forbidden:
-        await ctx.send(f"\U0001F6AB {ctx.author.mention}, I couldn't send you a DM. Please enable direct messages.")
+        await ctx.send(f"\U0001F6AB {ctx.author.mention}, I couldn't send you a DM. Please make sure you have direct messages enabled.")
         return
 
     def check(m):
@@ -95,26 +95,26 @@ async def redeem(ctx):
                 if role:
                     await ctx.author.add_roles(role)
                     success_message = (
-                        f"\U0001F389 **Redeem Successful!**\n"
-                        f"You've successfully redeemed your code and received the **{ROLE_NAME}** role. Enjoy your new privileges!"
+                        f"\U0001F389 **Success!**\n"
+                        f"Your code has been successfully redeemed and you've been granted the **{ROLE_NAME}** role. Enjoy!"
                     )
                     await ctx.author.send(success_message)
                 else:
-                    await ctx.author.send("\U0001F6AB Error: Role not found!")
+                    await ctx.author.send("\U0001F6AB Error: Couldn't find the role.")
                 return
             else:
                 attempts -= 1
                 if attempts > 0:
-                    await ctx.author.send(f"\U0000274C Invalid code. You have {attempts} attempts left.")
+                    await ctx.author.send(f"\U0000274C Invalid code. You have {attempts} attempts remaining.")
                 else:
-                    await ctx.author.send("\U0000274C You've used all your attempts. The redeem request has been canceled.")
+                    await ctx.author.send("\U0000274C You've used all your attempts. The redemption process has been canceled.")
                     return
 
         except asyncio.TimeoutError:
-            await ctx.author.send("\U000023F3 Your redeem request has been canceled due to inactivity.")
+            await ctx.author.send("\U000023F3 Timeout: The redemption process was canceled due to inactivity.")
             return
         except Exception as e:
-            await ctx.author.send("\U0001F6AB An unexpected error occurred. Please try again later.")
+            await ctx.author.send("\U0001F6AB Something went wrong. Please try again later.")
             return
 
 keep_alive()
